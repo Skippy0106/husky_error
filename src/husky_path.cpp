@@ -8,7 +8,7 @@
 #include "std_msgs/Int32.h"
 
 //declare global variable
-ros::Publisher pub_cmd , path_pub ,lio_pub_path;
+ros::Publisher pub_cmd , path_pub ,lio_pub_path ,state;
 std::string  POS_topic;
 double freq;
 
@@ -16,7 +16,9 @@ double freq;
 struct PID pid_x;
 struct PID pid_y;
 double minCmdX, maxCmdX, minCmdW, maxCmdW;
-
+ros::Time time_start;
+ros::Time time_now;
+double start, now, duration;
 //qp part
 //goal_path show path which qp has solved
 nav_msgs::Path goal_path;
@@ -30,16 +32,21 @@ tf::Transform world;
 
 
 //global variable
+int flag = 1;
 int c = -1;
 int i = 0;
 int count_ = 0;
 double init_time;
-
 //recieve the state from the server
 void recieve_state(const std_msgs::Int32 data){
-    c = data.data;
+	c = data.data;
 }
-
+void chatterCallback(const std_msgs::Int32 data){
+	if(data.data == 1)
+	{
+		flag = 4;	
+	}
+}
 //readparameter from launch parameter
 bool readParameter(ros::NodeHandle &nh)
 {
@@ -100,7 +107,8 @@ void process()
 
   //要傳給husky的vel_cmd指令
   geometry_msgs::Twist vel_cmd;
-  int flag = 1;
+
+
   while(ros::ok())
   {
     int c = getch();
@@ -147,61 +155,79 @@ void process()
       error_last << 0,0,0;
 
       if (flag == 2)
-      {
+		{
+/*				if(time_flag==0){
+					time_start = ros::Time::now();
+					start = time_start.toSec();
+					std:cout<<"start ; "<<start<<std::endl;
+*/
+
+/*
+					time_now = ros::Time::now();
+					std::cout<<"now ; "<<time_now<<std::endl;
+					now = time_now.toSec();
+					duration = now - start;
+					std::cout<<"duration ; "<<duration<<std::endl;
+
+					if(duration>10){
+
+					}else if(duration>20){
+*/
+
+	
         p1.pos << 0.0,0,0;
         p1.vel << 0.0,0.0,0;
         p1.acc << 0.00,0.0,0;
         p1.yaw = 0;
 
-        p2.pos<< 4.0,0.0,0;
+        p2.pos<< 2,0,0;
         p2.vel<< 0,0,0;
         p2.acc<< 0,0,0;
         p2.yaw = 0;
 
-        p3.pos<< 4.2,3.0,0;
+        p3.pos<< 2.2,3,0;
         p3.vel<< 0,0,0;
         p3.acc<< 0,0,0;
         p3.yaw = 0;
+	
+	//time_start = ros::Time::now();
+	//std:cout<<"start ; "<<time_start<<std::endl;
+	//ROS_INFO("%s",time_start);
 
-        path.push_back(segments(p1,p2,3));
-        path.push_back(segments(p2,p3,2.5));
+        path.push_back(segments(p1,p2,1));
+        path.push_back(segments(p2,p3,1.5));
+
+	//time_now = ros::Time::now();
+	//ROS_INFO("%s",time_now);
+	//std::cout<<"now ; "<<time_now<<std::endl;
+	
       }
-        else if (flag == 4)
+        else if (flag == 4)  //the position in flag 4 needs to be continued after flag 2
         {
-          /*ROS_INFO(" ===== enter ===== ");
-          p4.pos << 5.0,0.0,0.0;
-          p4.vel << 0.0,0.0,0;
-          p4.acc << 0.00,-0.0,0;
-          p4.yaw = -90;
+          ROS_INFO(" ===== enter ===== ");
 
-          p5.pos << 5.0,0.0,0.0;
-          p5.vel << 0.0,0.0,0;
-          p5.acc << 0.00,-0.0,0;
-          p5.yaw = 0;
+       		p1.pos << 2.2,3,0;
+        	p1.vel << 0.0,0.0,0;
+		    p1.acc << 0.00,0.0,0;
+		    p1.yaw = 0;
 
-          p6.pos<< 5.0,-1.0,0;
-          p6.vel<< 0,0,0;
-          p6.acc<< 0,0,0;
-          p6.yaw = 0;
+		     p2.pos<< 2,1,0;
+		      p2.vel<< 0,0,0;
+		      p2.acc<< 0,0,0;
+		      p2.yaw = 0;
 
-          p7.pos<< 5.0,-3.0,0;
-          p7.vel<< 0,0,0;
-          p7.acc<< 0,0,0;
-          p7.yaw = 0;
+		      p3.pos<< 0,0,0;
+		      p3.vel<< 0,0,0;
+		      p3.acc<< 0,0,0;
+		      p3.yaw = 0;
 
-          p8.pos<< 0.0,-3.0,0;
-          p8.vel<< 0,0,0;
-          p8.acc<< 0,0,0;
-          p8.yaw = 0;
-
-          path.push_back(segments(p4,p5,3));
-          path.push_back(segments(p5,p6,1));
-          path.push_back(segments(p6,p7,3));
-          path.push_back(segments(p7,p8,6));*/
+			  path.push_back(segments(p1,p2,1));
+		      path.push_back(segments(p2,p3,1.5));
       }
 
       data = plan.get_profile(path ,path.size(),sample);
       max = data.size();
+
 
       while(ros::ok())
       {
@@ -213,9 +239,18 @@ void process()
 
             //讓車子停在定點
             pub_cmd.publish(vel_cmd);
-            flag = 1;
+            //flag = 1;
             count_ = 0;
             max = 0;
+						/*time_now = ros::Time::now();   //time can be ignored 
+						now = time_now.toSec();
+						duration = now - start;
+						std::cout<<"duration ; "<<duration<<std::endl;*/
+						if(count_ == 0) //（duration < 10） -> （count_ = 0）
+						{
+							flag += 1;
+							std::cout<<"in flag ; "<<flag<<std::endl;
+						}
             break;
           }
 
@@ -254,10 +289,12 @@ void process()
           //Eigen::Vector3d error,error_last;
 
           error= goal_pose.v - lio_pose.v;
-          std::cout<<"max ; "<<max<<std::endl;
+          /*std::cout<<"max ; "<<max<<std::endl;
           std::cout<<"count_ : "<<count_<<std::endl;
           std::cout<<"sqrt : "<<std::sqrt(error(0)*error(0) + error(1)*error(1))<<std::endl;
-          std::cout<<"goal_pose : "<<goal_pose.v.transpose()<<std::endl;
+          std::cout<<"goal_pose : "<<goal_pose.v.transpose()<<std::endl;*/
+
+
 
           float cmd_x, cmd_y;
           pid_compute(pid_x, cmd_x, error(0), error_last(0), 0.001);
@@ -298,6 +335,14 @@ void process()
           r.sleep();
       }
     }
+    else if (flag == 3 )
+    {
+		
+		std_msgs::Int32 msg;
+		msg.data = 1;
+		state.publish(msg);
+		flag = 5;
+    }
   }
 }
 
@@ -307,6 +352,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "husky_control");
     ros::NodeHandle nh;
     ros::Subscriber  husky_command = nh.subscribe("husky/command", 20, recieve_state); //Subscribe husky command
+	state = nh.advertise<std_msgs::Int32>("state",20);
     bool init = readParameter(nh);
 
     if(init)
@@ -331,7 +377,7 @@ int main(int argc, char **argv)
     //qp的路徑
     path_pub = nh.advertise<nav_msgs::Path>("trajectory",1, true);
     pub_cmd = nh.advertise<geometry_msgs::Twist> ("/cmd_vel", 100);
-
+	ros::Subscriber kinova_ok = nh.subscribe("kinova_ok", 20, chatterCallback);
 
     //process have no ()
     std::thread ctrl_process{process};
