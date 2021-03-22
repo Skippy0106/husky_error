@@ -53,7 +53,7 @@ bool readParameter(ros::NodeHandle &nh)
     bool result = true;
     // get topic name
     if (  !nh.getParam("POS_topic", POS_topic)){
-        ROS_ERROR("Failed to get param 'Path_topic'");
+		ROS_ERROR("Failed to get param 'Path_topic'");
         ROS_ERROR("Failed to get param 'POS_topic'");
         result = false;
     }
@@ -101,46 +101,46 @@ void cb_pos(const nav_msgs::Odometry::ConstPtr& msg){
 
 void process()
 {
-  //ncrl::tf
-  static tf::TransformBroadcaster br;
-  ros::Rate r(freq);
+  	//ncrl::tf
+  	static tf::TransformBroadcaster br;
+  	ros::Rate r(freq);
 
-  //要傳給husky的vel_cmd指令
-  geometry_msgs::Twist vel_cmd;
+  	//要傳給husky的vel_cmd指令
+  	geometry_msgs::Twist vel_cmd;
 
 
-  while(ros::ok())
-  {
-    int c = getch();
-    //std::cout << "c : " << c <<  std::endl;
-    if (c != EOF)
-    {
-      switch(c)
-      {
-        case 49:     // key 1
-          flag = 1;
-        break;
-        case 50:     // key 2
-          flag = 2;
-        break;
-        case 51:     // key 3
-          flag = 4;
-        break;
-        case 2:     // key 2
-          flag = 2;
-        break;
-        case 4:
-          flag = 4;
-        break;
-      }
-    }
+  	while(ros::ok())
+  	{
+    	int c = getch();
+    	//std::cout << "c : " << c <<  std::endl;
+    	if (c != EOF)
+    	{
+      		switch(c)
+      		{
+				case 49:     // key 1
+				  	flag = 1;
+					break;
+				case 50:     // key 2
+				  	flag = 2;
+					break;
+				case 51:     // key 3
+				  	flag = 4;
+					break;
+				case 2:     // key 2
+				  	flag = 2;
+					break;
+				case 4:
+				  	flag = 4;
+					break;
+			}
+    	}
 
     if(flag ==1)
     {
       //ROS_INFO(" ===== KEYBOARD CONTROL ===== ");
     }
 
-    if (flag == 2 || flag == 4)
+    if (flag == 2 || flag == 3)
     {
       ROS_INFO(" ===== enter ===== ");
       double max;
@@ -155,74 +155,52 @@ void process()
       error_last << 0,0,0;
 
       if (flag == 2)
-		{
-/*				if(time_flag==0){
-					time_start = ros::Time::now();
-					start = time_start.toSec();
-					std:cout<<"start ; "<<start<<std::endl;
-*/
+	{
+		p1.pos << 0,0,0;
+		p1.vel << 0,0,0;
+		p1.acc << 0.00,0.0,0;
+		p1.yaw = 0;
 
-/*
-					time_now = ros::Time::now();
-					std::cout<<"now ; "<<time_now<<std::endl;
-					now = time_now.toSec();
-					duration = now - start;
-					std::cout<<"duration ; "<<duration<<std::endl;
+		p2.pos<< 2,0,0;
+		p2.vel<< 0,0,0;
+		p2.acc<< 0,0,0;
+		p2.yaw = 0;
 
-					if(duration>10){
+		p3.pos<< 2.2,-3,0;
+		p3.vel<< 0,0,0;
+		p3.acc<< 0,0,0;
+		p3.yaw = 0;
 
-					}else if(duration>20){
-*/
+		/*p4.pos<< 2,-3,0;
+		p4.vel<< 0,0,0;
+		p4.acc<< 0,0,0;
+		p4.yaw = 0;*/
 
-	
-        p1.pos << 0.0,0,0;
-        p1.vel << 0.0,0.0,0;
-        p1.acc << 0.00,0.0,0;
-        p1.yaw = 0;
-
-        p2.pos<< 2,0,0;
-        p2.vel<< 0,0,0;
-        p2.acc<< 0,0,0;
-        p2.yaw = 0;
-
-        p3.pos<< 2.2,3,0;
-        p3.vel<< 0,0,0;
-        p3.acc<< 0,0,0;
-        p3.yaw = 0;
-	
-	//time_start = ros::Time::now();
-	//std:cout<<"start ; "<<time_start<<std::endl;
-	//ROS_INFO("%s",time_start);
-
-        path.push_back(segments(p1,p2,1));
-        path.push_back(segments(p2,p3,1.5));
-
-	//time_now = ros::Time::now();
-	//ROS_INFO("%s",time_now);
-	//std::cout<<"now ; "<<time_now<<std::endl;
+		path.push_back(segments(p1,p2,2));
+		path.push_back(segments(p2,p3,2));
+		//path.push_back(segments(p3,p4,2));
 	
       }
-        else if (flag == 4)  //the position in flag 4 needs to be continued after flag 2
-        {
-          ROS_INFO(" ===== enter ===== ");
-
-       		p1.pos << 2.2,3,0;
+      else if (flag == 3)  //the position in flag 4 needs to be continued after flag 2
+      {
+			ROS_INFO(" ===== enter ===== ");
+       		p1.pos << 2.2,-3,0;
         	p1.vel << 0.0,0.0,0;
 		    p1.acc << 0.00,0.0,0;
 		    p1.yaw = 0;
 
-		     p2.pos<< 2,1,0;
-		      p2.vel<< 0,0,0;
-		      p2.acc<< 0,0,0;
-		      p2.yaw = 0;
+		    p2.pos<< 1.8,-3.5,0;
+		    p2.vel<< 1.4,3,0;
+		    p2.acc<< 0,0,0;
+		    p2.yaw = 0;
 
-		      p3.pos<< 0,0,0;
-		      p3.vel<< 0,0,0;
-		      p3.acc<< 0,0,0;
-		      p3.yaw = 0;
+		    p3.pos<< 1.4,-3,0;
+		    p3.vel<< 0,0,0;
+		    p3.acc<< 0,0,0;
+		    p3.yaw = 0;
 
-			  path.push_back(segments(p1,p2,1));
-		      path.push_back(segments(p2,p3,1.5));
+			path.push_back(segments(p1,p2,1));
+		    path.push_back(segments(p2,p3,1));
       }
 
       data = plan.get_profile(path ,path.size(),sample);
@@ -335,7 +313,7 @@ void process()
           r.sleep();
       }
     }
-    else if (flag == 3 )
+    else if (flag == 4 )
     {
 		
 		std_msgs::Int32 msg;
