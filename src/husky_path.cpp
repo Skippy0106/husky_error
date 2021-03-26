@@ -30,29 +30,30 @@ geometry_msgs::Point acc;
 ncrl_tf::Trans goal_pose, lio_pose;
 tf::Transform world;
 
-
 //global variable
 int flag = 1;
 int c = -1;
 int i = 0;
 int count_ = 0;
 double init_time;
+int flag_kinova = 0;
 //recieve the state from the server
 void recieve_state(const std_msgs::Int32 data){
 	c = data.data;
 }
 void chatterCallback(const std_msgs::Int32 data){
-	if(data.data == 1)
+	if(data.data == 1 && flag_kinova==0)
 	{
-		flag = 4;	
+		flag = 4;
+		flag_kinova=1;							
 	}
 }
 //readparameter from launch parameter
 bool readParameter(ros::NodeHandle &nh)
 {
-    bool result = true;
+   bool result = true;
     // get topic name
-    if (  !nh.getParam("POS_topic", POS_topic)){
+    if (!nh.getParam("POS_topic", POS_topic)){
 		ROS_ERROR("Failed to get param 'Path_topic'");
         ROS_ERROR("Failed to get param 'POS_topic'");
         result = false;
@@ -108,11 +109,10 @@ void process()
   	//要傳給husky的vel_cmd指令
   	geometry_msgs::Twist vel_cmd;
 
-
   	while(ros::ok())
   	{
-    	int c = getch();
-    	//std::cout << "c : " << c <<  std::endl;
+		int c = getch();
+		//std::cout << "c : " << c <<  std::endl;
     	if (c != EOF)
     	{
       		switch(c)
@@ -126,7 +126,7 @@ void process()
 				case 51:     // key 3
 				  	flag = 4;
 					break;
-				case 2:     // key 2
+				case 2:      // key 2
 				  	flag = 2;
 					break;
 				case 4:
@@ -135,193 +135,220 @@ void process()
 			}
     	}
 
-    if(flag ==1)
-    {
-      //ROS_INFO(" ===== KEYBOARD CONTROL ===== ");
-    }
+		if(flag ==1)
+		{
+			//ROS_INFO(" ===== KEYBOARD CONTROL ===== ");
+		}
 
-    if (flag == 2 || flag == 3)
-    {
-      ROS_INFO(" ===== enter ===== ");
-      double max;
-      double sample=0.0125;
-      qptrajectory plan;
-      path_def path;
-      trajectory_profile p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12;
-      std::vector<trajectory_profile> data;
-
-      Eigen::Vector3d error,error_last;
-      error << 0,0,0;
-      error_last << 0,0,0;
-
-      if (flag == 2)
-	{
-		p1.pos << 0,0,0;
-		p1.vel << 0,0,0;
-		p1.acc << 0.00,0.0,0;
-		p1.yaw = 0;
-
-		p2.pos<< 2,0,0;
-		p2.vel<< 0,0,0;
-		p2.acc<< 0,0,0;
-		p2.yaw = 0;
-
-		p3.pos<< 2.2,-3,0;
-		p3.vel<< 0,0,0;
-		p3.acc<< 0,0,0;
-		p3.yaw = 0;
-
-		/*p4.pos<< 2,-3,0;
-		p4.vel<< 0,0,0;
-		p4.acc<< 0,0,0;
-		p4.yaw = 0;*/
-
-		path.push_back(segments(p1,p2,2));
-		path.push_back(segments(p2,p3,2));
-		//path.push_back(segments(p3,p4,2));
-	
-      }
-      else if (flag == 3)  //the position in flag 4 needs to be continued after flag 2
-      {
+		if (flag == 2 || flag == 4 )
+		{
 			ROS_INFO(" ===== enter ===== ");
-       		p1.pos << 2.2,-3,0;
-        	p1.vel << 0.0,0.0,0;
-		    p1.acc << 0.00,0.0,0;
-		    p1.yaw = 0;
+			double max;
+			double sample=0.0125;
+			qptrajectory plan;
+			path_def path;
+			trajectory_profile p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12;
+			std::vector<trajectory_profile> data;
 
-		    p2.pos<< 1.8,-3.5,0;
-		    p2.vel<< 1.4,3,0;
-		    p2.acc<< 0,0,0;
-		    p2.yaw = 0;
+			Eigen::Vector3d error,error_last;
+			error << 0,0,0;
+			error_last << 0,0,0;
 
-		    p3.pos<< 1.4,-3,0;
-		    p3.vel<< 0,0,0;
-		    p3.acc<< 0,0,0;
-		    p3.yaw = 0;
+			if (flag == 2)
+			{
+				p1.pos << 0,0,0;
+				p1.vel << 0,0,0;
+				p1.acc << 0.00,0.0,0;
+				p1.yaw = 0;
 
-			path.push_back(segments(p1,p2,1));
-		    path.push_back(segments(p2,p3,1));
-      }
+				p2.pos<< 5,0,0;
+				p2.vel<< 0,0,0;
+				p2.acc<< 0,0,0;
+				p2.yaw = 0;
 
-      data = plan.get_profile(path ,path.size(),sample);
-      max = data.size();
+				p3.pos<< 6,0,0;
+				p3.vel<< 0,0,0;
+				p3.acc<< 0,0,0;
+				p3.yaw = 0;
 
+				p4.pos<< 6,-3.5,0;
+				p4.vel<< 0,0,0;
+				p4.acc<< 0,0,0;
+				p4.yaw = 0;
+				
+				/*p5.pos << 6 ,-3.5 ,0;
+				p5.vel << 0.0 ,0.0,0;
+				p5.acc << 0.00,0.0,0;
+				p5.yaw = 0;*/
 
-      while(ros::ok())
-      {
-//&& std::sqrt(std::pow(error(0),2) + std::pow(error(1),2)) < 0.1
-          if(count_ >= max - 1 && std::sqrt(error(0) * error(0) + error(1) * error(1)) < 0.1)
-          {
-            vel_cmd.linear.x = 0;
-            vel_cmd.angular.z = 0;
+				p6.pos<< 4.8,-4.1,0;
+				p6.vel<< 0  ,0   ,0;
+				p6.acc<< 0  ,0   ,0;
+				p6.yaw = 0;
 
-            //讓車子停在定點
-            pub_cmd.publish(vel_cmd);
-            //flag = 1;
-            count_ = 0;
-            max = 0;
-						/*time_now = ros::Time::now();   //time can be ignored 
-						now = time_now.toSec();
-						duration = now - start;
-						std::cout<<"duration ; "<<duration<<std::endl;*/
-						if(count_ == 0) //（duration < 10） -> （count_ = 0）
-						{
-							flag += 1;
-							std::cout<<"in flag ; "<<flag<<std::endl;
-						}
-            break;
-          }
+				p7.pos<< 3.6,-3.5,0;
+				p7.vel<< 0  ,0 ,0;
+				p7.acc<< 0  ,0 ,0;
+				p7.yaw = 0;
 
-          else
-          {
-            goal_path.header.stamp= ros::Time::now();
-            goal_path.header.frame_id="WORLD";
+				/*p7.pos<< 3.6,-3.5,0;
+				p7.vel<< 0  ,0 ,0;
+				p7.acc<< 0  ,0 ,0;
+				p7.yaw = 0;*/
 
-            geometry_msgs::PoseStamped this_pose_stamped;
+				p8.pos << 3,-2, 0;
+				p8.vel << 0  , 0  , 0;
+				p8.acc << 0  , 0  , 0;
+				p8.yaw = 0;
 
-            this_pose_stamped.header.stamp=ros::Time::now();
-            this_pose_stamped.header.frame_id="WORLD";
+				path.push_back(segments(p1,p2,4.7));
+				path.push_back(segments(p2,p3,1.5));
+				path.push_back(segments(p3,p4,3));
+				path.push_back(segments(p4, p6, 1.5));
+				path.push_back(segments(p6, p7, 1.5));
+				path.push_back(segments(p7, p8, 3));
+			}
+			else if (flag == 4)  //the position in flag 4 needs to be continued after flag 2
+			{
+				ROS_INFO(" ===== enter ===== ");
+				p1.pos << 3 ,-2 ,0;
+				p1.vel << 0.0 ,0.0,0;
+				p1.acc << 0.00,0.0,0;
+				p1.yaw = 135;
 
-            this_pose_stamped.pose.position.x = data[count_].pos[0];
-            this_pose_stamped.pose.position.y = data[count_].pos[1];
+				p2.pos<< 3,-2,0;
+				p2.vel<< 0  ,0   ,0;
+				p2.acc<< 0  ,0   ,0;
+				p2.yaw = 0;
 
-            goal_path.poses.push_back(this_pose_stamped);
-
-            goal_pose.v << data[count_].pos[0] ,data[count_].pos[1] , data[count_].pos[2];
-            vel.x = data[count_].vel[0];
-
-            if(count_ >= max - 1)
-            {
-//              count_ = max - 1;
-            }
-            else
-            {
-              count_ += 1 ;
-            }
-
-
-            //</lio_path>
-            path_pub.publish(goal_path);
-          }
-
-          //Eigen::Vector3d error,error_last;
-
-          error= goal_pose.v - lio_pose.v;
-          /*std::cout<<"max ; "<<max<<std::endl;
-          std::cout<<"count_ : "<<count_<<std::endl;
-          std::cout<<"sqrt : "<<std::sqrt(error(0)*error(0) + error(1)*error(1))<<std::endl;
-          std::cout<<"goal_pose : "<<goal_pose.v.transpose()<<std::endl;*/
+				p3.pos<< 0,-5,0;
+				p3.vel<< 0  ,0 ,0;
+				p3.acc<< 0  ,0 ,0;
+				p3.yaw = 0;
 
 
+				path.push_back(segments(p1, p2, 2));
+				path.push_back(segments(p2, p3, 8));
+			}
 
-          float cmd_x, cmd_y;
-          pid_compute(pid_x, cmd_x, error(0), error_last(0), 0.001);
-          pid_compute(pid_y, cmd_y, error(1), error_last(1), 0.001);
+			data = plan.get_profile(path ,path.size(),sample);
+			max = data.size();
 
-          error_last = error;
 
-          Eigen::Vector3d cmd(cmd_x, cmd_y, 0);
+			while(ros::ok())
+			{
+				//&& std::sqrt(std::pow(error(0),2) + std::pow(error(1),2)) < 0.1
+				if(count_ >= max - 1 && std::sqrt(error(0) * error(0) + error(1) * error(1)) < 0.1)
+				{
+					vel_cmd.linear.x = 0;
+					vel_cmd.angular.z = 0;
 
-          //trans imu_init frame cmd into body frame
-          cmd = lio_pose.q.inverse() * cmd;
+					//讓車子停在定點
+					pub_cmd.publish(vel_cmd);
+					//flag = 1;
+					count_ = 0;
+					max = 0;
+					
+					if(count_ == 0) //（duration < 10） -> （count_ = 0）
+					{
+						flag += 1;
+						std::cout<<"in flag ; "<<flag<<std::endl;
+					}
+					break;
+				}
 
-          //feedforward
-          vel_cmd.linear.x = cmd(0);
-          vel_cmd.angular.z = cmd(1);
-          //vel_cmd.linear.x += 0.5 * data[count_].vel[0];
-          //vel_cmd.angular.z += 0.5 * data[count_].vel[1];
+				else
+				{
+					goal_path.header.stamp= ros::Time::now();
+					goal_path.header.frame_id="WORLD";
 
-          if (fabs(vel_cmd.linear.x) > maxCmdX)
-          {
-              vel_cmd.linear.x = vel_cmd.linear.x * maxCmdX / fabs(vel_cmd.linear.x);
-          }
-          else if (fabs(vel_cmd.linear.x) < minCmdX)
-          {
-              vel_cmd.linear.x = 0;
-          }
+					geometry_msgs::PoseStamped this_pose_stamped;
 
-          if (fabs(vel_cmd.angular.z) > maxCmdW)
-          {
-              vel_cmd.angular.z = vel_cmd.angular.z * maxCmdW / fabs(vel_cmd.angular.z);
-          }
-          else if (fabs(vel_cmd.angular.z) < minCmdW)
-          {
-          vel_cmd.angular.z = 0;
-          }
+					this_pose_stamped.header.stamp=ros::Time::now();
+					this_pose_stamped.header.frame_id="WORLD";
 
-          pub_cmd.publish(vel_cmd);
-          r.sleep();
-      }
-    }
-    else if (flag == 4 )
-    {
-		
-		std_msgs::Int32 msg;
-		msg.data = 1;
-		state.publish(msg);
-		flag = 5;
-    }
-  }
+					this_pose_stamped.pose.position.x = data[count_].pos[0];
+					this_pose_stamped.pose.position.y = data[count_].pos[1];
+
+					goal_path.poses.push_back(this_pose_stamped);
+
+					goal_pose.v << data[count_].pos[0] ,data[count_].pos[1] , data[count_].pos[2];
+					vel.x = data[count_].vel[0];
+
+					if(count_ >= max - 1)
+					{
+						// count_ = max - 1;
+					}
+					else
+					{
+						count_ += 1 ;
+					}
+
+					//</lio_path>
+					path_pub.publish(goal_path);
+				}
+
+				//Eigen::Vector3d error,error_last;
+				error= goal_pose.v - lio_pose.v;
+				/*std::cout<<"max ; "<<max<<std::endl;
+				std::cout<<"count_ : "<<count_<<std::endl;
+				std::cout<<"sqrt : "<<std::sqrt(error(0)*error(0) + error(1)*error(1))<<std::endl;
+				std::cout<<"goal_pose : "<<goal_pose.v.transpose()<<std::endl;*/
+				float cmd_x, cmd_y;
+				pid_compute(pid_x, cmd_x, error(0), error_last(0), 0.001);
+				pid_compute(pid_y, cmd_y, error(1), error_last(1), 0.001);
+
+				error_last = error;
+
+				Eigen::Vector3d cmd(cmd_x, cmd_y, 0);
+
+				//trans imu_init frame cmd into body frame
+				cmd = lio_pose.q.inverse() * cmd;
+
+				//feedforward
+				vel_cmd.linear.x = cmd(0);
+				vel_cmd.angular.z = cmd(1);
+				//vel_cmd.linear.x += 0.5 * data[count_].vel[0];
+				//vel_cmd.angular.z += 0.5 * data[count_].vel[1];
+
+				if (fabs(vel_cmd.linear.x) > maxCmdX)
+				{
+					vel_cmd.linear.x = vel_cmd.linear.x * maxCmdX / fabs(vel_cmd.linear.x);
+				}
+				else if (fabs(vel_cmd.linear.x) < minCmdX)
+				{
+					vel_cmd.linear.x = 0;
+				}
+
+				if (fabs(vel_cmd.angular.z) > maxCmdW)
+				{
+					vel_cmd.angular.z = vel_cmd.angular.z * maxCmdW / fabs(vel_cmd.angular.z);
+				}
+				else if (fabs(vel_cmd.angular.z) < minCmdW)
+				{
+					vel_cmd.angular.z = 0;
+				}
+
+				pub_cmd.publish(vel_cmd);
+				r.sleep();
+			}
+		}
+		else if (flag == 3 )
+		{	
+			std_msgs::Int32 msg;
+			msg.data = 1;
+			state.publish(msg);
+			std::cout << "in flag: "<< flag <<std::endl;
+		}
+		else if (flag == 5 )
+		{	
+			std_msgs::Int32 msg;
+			msg.data = 666;
+			state.publish(msg);
+			flag = 10;
+			std::cout << "in flag: "<< flag <<std::endl;
+		}
+  	}
 }
 
 
@@ -355,7 +382,7 @@ int main(int argc, char **argv)
     //qp的路徑
     path_pub = nh.advertise<nav_msgs::Path>("trajectory",1, true);
     pub_cmd = nh.advertise<geometry_msgs::Twist> ("/cmd_vel", 100);
-	ros::Subscriber kinova_ok = nh.subscribe("kinova_ok", 20, chatterCallback);
+    ros::Subscriber kinova_ok = nh.subscribe("kinova_ok", 20, chatterCallback);
 
     //process have no ()
     std::thread ctrl_process{process};
@@ -363,4 +390,3 @@ int main(int argc, char **argv)
     ros::spin();
     return 0;
 }
-
