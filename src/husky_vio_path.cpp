@@ -26,8 +26,8 @@ geometry_msgs::Point vel;
 geometry_msgs::Point acc;
 
 //goal_pose world為座標
-//lio_pose world為座標
-ncrl_tf::Trans goal_pose, lio_pose;
+//vio_pose world為座標
+ncrl_tf::Trans goal_pose, vio_pose;
 tf::Transform world;
 
 //global variable
@@ -103,8 +103,8 @@ void cb_pos(const nav_msgs::Odometry::ConstPtr &msg)
     v_ = rotation_90 * v_;
     q_ = rotation_90 * q_;*/
 
-	//lio_pose 有了現在收到的q 和 v translation
-	ncrl_tf::setTrans(lio_pose, q_, v_);
+	//vio_pose 有了現在收到的q 和 v translation
+	ncrl_tf::setTrans(vio_pose, q_, v_);
 }
 
 void process()
@@ -168,52 +168,29 @@ void process()
 				p1.acc << 0.00, 0.0, 0;
 				p1.yaw = 0;
 
-				p2.pos << 5, 0, 0;
+				p2.pos << 2, 1, 0;
 				p2.vel << 0, 0, 0;
 				p2.acc << 0, 0, 0;
 				p2.yaw = 0;
 
-				p3.pos << 6, 0, 0;
+				p3.pos << 4, 0, 0;
 				p3.vel << 0, 0, 0;
 				p3.acc << 0, 0, 0;
 				p3.yaw = 0;
 
-				p4.pos << 6, -3.5, 0;
-				p4.vel << 0, 0, 0;
-				p4.acc << 0, 0, 0;
-				p4.yaw = 0;
-
-				p6.pos << 4.8, -4.1, 0;
-				p6.vel << 0, 0, 0;
-				p6.acc << 0, 0, 0;
-				p6.yaw = 0;
-
-				p7.pos << 3.6, -3.5, 0;
-				p7.vel << 0, 0, 0;
-				p7.acc << 0, 0, 0;
-				p7.yaw = 0;
-
-				p8.pos << 3, -2, 0;
-				p8.vel << 0, 0, 0;
-				p8.acc << 0, 0, 0;
-				p8.yaw = 0;
-
-				path.push_back(segments(p1, p2, 4.7));
-				path.push_back(segments(p2, p3, 1.5));
-				path.push_back(segments(p3, p4, 3));
-				path.push_back(segments(p4, p6, 1.5));
-				path.push_back(segments(p6, p7, 1.5));
-				path.push_back(segments(p7, p8, 3));
+				path.push_back(segments(p1, p2,3));
+				//path.push_back(segments(p2, p3,3));
+			
 			}
 			else if (flag == 4) //the position in flag 4 needs to be continued after flag 2
 			{
 				ROS_INFO(" ===== enter ===== ");
-				p1.pos << 3, -2, 0;
+				p1.pos << 2, 1, 0;
 				p1.vel << 0.0, 0.0, 0;
 				p1.acc << 0.00, 0.0, 0;
-				p1.yaw = 135;
+				p1.yaw = 0;
 
-				p2.pos << 3, -2, 0;
+				p2.pos << 4, 0, 0;
 				p2.vel << 0, 0, 0;
 				p2.acc << 0, 0, 0;
 				p2.yaw = 0;
@@ -231,8 +208,8 @@ void process()
 
 
 				path.push_back(segments(p1, p2, 3));
-				path.push_back(segments(p2, p3, 2));
-				path.push_back(segments(p3, p4, 4));
+				//path.push_back(segments(p2, p3, 2));
+				//path.push_back(segments(p3, p4, 4));
 ;
 			}
 
@@ -293,7 +270,7 @@ void process()
 				}
 
 				//Eigen::Vector3d error,error_last;
-				error = goal_pose.v - lio_pose.v;
+				error = goal_pose.v - vio_pose.v;
 				/*std::cout<<"max ; "<<max<<std::endl;
 				std::cout<<"count_ : "<<count_<<std::endl;
 				std::cout<<"sqrt : "<<std::sqrt(error(0)*error(0) + error(1)*error(1))<<std::endl;
@@ -307,7 +284,7 @@ void process()
 				Eigen::Vector3d cmd(cmd_x, cmd_y, 0);
 
 				//trans imu_init frame cmd into body frame
-				cmd = lio_pose.q.inverse() * cmd;
+				cmd = vio_pose.q.inverse() * cmd;
 
 				//feedforward
 				vel_cmd.linear.x = cmd(0);
@@ -364,6 +341,7 @@ int main(int argc, char **argv)
 	state = nh.advertise<std_msgs::Int32>("state", 1);
 finger_open = nh.advertise<std_msgs::Int32>("finger_open", 1);
 	bool init = readParameter(nh);
+	ROS_INFO("waiting for path planning");
 
 	if (init)
 	{
@@ -384,7 +362,7 @@ finger_open = nh.advertise<std_msgs::Int32>("finger_open", 1);
 
 	//qp的路徑
 	path_pub = nh.advertise<nav_msgs::Path>("trajectory", 1, true);
-	pub_cmd = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 100);
+	pub_cmd = nh.advertise<geometry_msgs::Twist>("/jackal_velocity_controller/cmd_vel", 100);
 	ros::Subscriber kinova_ok = nh.subscribe("kinova_ok", 20, chatterCallback);
 
 	//process have no ()

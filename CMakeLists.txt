@@ -56,4 +56,6 @@ target_link_libraries(
 
 
 add_executable(husky_path src/husky_path.cpp)
+add_executable(husky_vio_path src/husky_vio_path.cpp)
 target_link_libraries(husky_path ${catkin_LIBRARIES} qp)
+target_link_libraries(husky_vio_path ${catkin_LIBRARIES} qp)
